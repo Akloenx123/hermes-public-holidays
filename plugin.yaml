@@ -1,0 +1,12 @@
+name: public-holidays
+version: 0.1.0
+description: Public holidays for 200+ countries and their regions, plus workday checks, counts and deadline math (Nager.Date, no API key).
+author: Akloenx123
+license: MIT
+homepage: https://github.com/Akloenx123/hermes-public-holidays
+tags: [calendar, holidays, workdays, productivity]
+provides_tools:
+  - holidays_list
+  - workday_check
+  - workdays_count
+  - workdays_add

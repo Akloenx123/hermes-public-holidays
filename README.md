@@ -57,8 +57,10 @@ Requires Hermes 0.21 or newer.
 
 ## Data and limits
 
-- Holiday data is whatever Nager.Date publishes; it covers roughly the years 2000–2098. Check
-  results for legal deadlines against an official source.
+- Holiday data is whatever Nager.Date publishes; it covers roughly the years 2000–2098 and the
+  countries listed at <https://date.nager.at/Country>. For a country or year it does not cover the
+  tools return an error instead of an empty calendar, so a missing data set never turns holidays
+  into workdays. Check results for legal deadlines against an official source.
 - "Workday" means not a weekend day and not a holiday of the selected types. Company holidays,
   half days (24/31 December) and bridge days are not modelled.
 - `workdays_count` covers at most ~10 years per call, `workdays_add` at most ±2000 working days.

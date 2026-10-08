@@ -63,8 +63,8 @@ def fetch_year(country: str, year: int) -> list[dict]:
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         reason = getattr(exc, "reason", exc)
         raise HolidayError(f"Could not reach date.nager.at ({reason}); check the network and try again.") from None
-    if status == 204 or not body:
-        return []
+    if status == 204 or not body.strip():
+        raise HolidayError(_no_data(country, year))
     if len(body) > MAX_BODY_BYTES:
         raise HolidayError("Nager.Date response was unexpectedly large; refusing to parse it.")
     try:
@@ -73,7 +73,17 @@ def fetch_year(country: str, year: int) -> list[dict]:
         raise HolidayError("Nager.Date returned a response that is not JSON; try again later.") from None
     if not isinstance(data, list):
         raise HolidayError("Nager.Date returned an unexpected response shape.")
-    return [h for h in data if isinstance(h, dict) and isinstance(h.get("date"), str)]
+    rows = [h for h in data if isinstance(h, dict) and isinstance(h.get("date"), str)]
+    if not rows:
+        raise HolidayError(_no_data(country, year))
+    return rows
+
+
+def _no_data(country: str, year: int) -> str:
+    # Nager.Date answers HTTP 204 for valid ISO codes it does not cover (e.g. IN). Treating that
+    # as "no holidays" would silently turn every holiday into a workday, so refuse instead.
+    return (f"Nager.Date publishes no holiday data for {country} in {year} (country not covered, see "
+            "https://date.nager.at/Country), so holidays and workdays cannot be computed for it.")
 
 
 class HolidayCalendar:

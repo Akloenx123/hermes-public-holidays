@@ -154,3 +154,42 @@ def test_live_api_matches_fixture():
     assert core.fetch_year("DE", 2026) == fixture_fetch("DE", 2026)
     with pytest.raises(core.HolidayError, match="no data for country"):
         core.fetch_year("XX", 2026)
+    with pytest.raises(core.HolidayError, match="no holiday data"):
+        core.fetch_year("IN", 2026)  # valid ISO code that Nager.Date does not cover (HTTP 204)
+
+
+class _Resp:
+    def __init__(self, status, body):
+        self.status, self._body = status, body
+
+    def read(self, _n=-1):
+        return self._body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+
+class _Opener:
+    def __init__(self, resp):
+        self.resp = resp
+
+    def open(self, req, timeout=None):
+        return self.resp
+
+
+@pytest.mark.parametrize("status, body", [(204, b""), (200, b"[]")])
+def test_country_without_data_is_an_error_not_an_empty_calendar(monkeypatch, status, body):
+    # Nager.Date answers 204 for ISO codes it does not cover (e.g. IN). Returning an
+    # empty list would make every holiday look like a workday.
+    monkeypatch.setattr(core, "_OPENER", _Opener(_Resp(status, body)))
+    with pytest.raises(core.HolidayError, match="no holiday data"):
+        core.fetch_year("IN", 2026)
+
+
+def test_fetch_parses_a_normal_response(monkeypatch):
+    body = (FIXTURES / "DE-2026.json").read_bytes()
+    monkeypatch.setattr(core, "_OPENER", _Opener(_Resp(200, body)))
+    assert core.fetch_year("DE", 2026) == fixture_fetch("DE", 2026)
